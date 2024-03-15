@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,14 +29,36 @@ func ShortenURL(db *gorm.DB) func(c *gin.Context) {
 func Redirect(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
 		value := c.Param("id")
-		shortenedURL := "shortURL.com/" + value
+		shortenedURL := "localhost:8080/" + value
 		url, err := postgres.FindURL(db, shortenedURL)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found!!!"})
 			return
 		}
-		fmt.Println(url)
+		err = postgres.UpdateCount(db, shortenedURL)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to updated count"})
+			return
+		}
 		c.Redirect(http.StatusFound, url)
+	}
+}
 
+
+func TotalCount(db *gorm.DB) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		data := request.RequestURL{}
+		if err := c.ShouldBindJSON(&data); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to parse request body"})
+			return
+		}
+
+		cnt, err := postgres.GetCount(db, data.URL)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Page not found!!!"})
+			return
+		}
+		
+		c.JSON(http.StatusOK, gin.H{"Count": cnt})
 	}
 }

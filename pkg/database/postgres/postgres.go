@@ -49,11 +49,12 @@ func GenerateShortURL(db *gorm.DB, originalURL string) (string, error) {
 	if err == nil {
 		return url.ShortenedURL, nil
 	}
-	baseURL := "shortURL.com/"
+	baseURL := "localhost:8080/"
 	urlSuffix := RandStringBytes(6)
 	baseURL += urlSuffix
 	url.OriginalURL = originalURL
 	url.ShortenedURL = baseURL
+	url.Count = 0
 	err = db.Model(&models.URL{}).Save(&url).Error
 	if err != nil {
 		return "", err
@@ -67,4 +68,22 @@ func FindURL(db *gorm.DB, shortenedURL string) (string, error) {
 		return "", err
 	}
 	return url.OriginalURL, err
+}
+func GetCount(db *gorm.DB, shortenedURL string) (int64, error) {
+	url := models.URL{}
+	err := db.Where(&models.URL{ShortenedURL: shortenedURL}).First(&url).Error
+	if err != nil{
+		return 0, err
+	}
+	return url.Count, nil
+}
+func UpdateCount(db *gorm.DB, shortenedURL string) (error) {
+	url := models.URL{}
+	err := db.Where(&models.URL{ShortenedURL: shortenedURL}).First(&url).Error
+
+	if err != nil{
+		return err
+	}
+	db.Model(&url).Update("Count", url.Count + 1)
+	return nil
 }

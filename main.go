@@ -31,8 +31,9 @@ func main() {
 	}
 
 	router := gin.Default()
-	router.POST("/shorturl", api.ShortenURL(db))
 	router.GET("/ping", ping)
+	router.POST("/shorturl", api.ShortenURL(db))
+	router.GET("/count", api.TotalCount(db))
 	router.GET("/:id", api.Redirect(db))
 
 
